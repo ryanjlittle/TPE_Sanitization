@@ -1,8 +1,8 @@
 clc, clear
 
 %we want to convert source to target
-target = imread('./target.jpg');
-source = imread('./source.jpg');
+target = imread('../images/target.jpg');
+source = imread('../images/source.jpg');
 
 
 block_widths = [2, 4, 8, 16, 32, 64, 128, 256, 512];
@@ -13,6 +13,6 @@ for block_width = block_widths
     % print to confirm thumbnails match
     has_same_thumbnail(im_3(1:512, :, :), target, block_width)
     
-    filename = strcat('./results/p-',int2str(512/block_width),'.bmp');
+    filename = strcat('../results/p-',int2str(512/block_width),'.bmp');
     imwrite(im_3, filename);
 end
