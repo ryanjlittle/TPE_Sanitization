@@ -1,4 +1,4 @@
-# Facial Perturbation for TPE
+# Facial Sanitization for TPE
 
 ### Perturbation and Reverse Perturbation
 The perturbation and reverse perturbation functions are in perturb.m and reverse_perturbation.m respectively. To perform the encryption and decryption, both functions call openssl from the command line. Thus, openssl must be installed and added to your path. 
