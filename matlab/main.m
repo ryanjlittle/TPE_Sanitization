@@ -15,4 +15,6 @@ for block_width = block_widths
     
     filename = strcat('../results/p-',int2str(512/block_width),'.bmp');
     imwrite(im_3, filename);
+    
+    
 end

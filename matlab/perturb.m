@@ -22,7 +22,6 @@ new_img = source;
 metadata = uint8.empty(0, 3);
 
 num_blocks = ceil(img_height/block_width)*ceil(img_width/block_width);
-block_idx_len = ceil(log2(num_blocks) / 8);
 block_idx = 0;
 
 for i = 1:block_width:img_width
@@ -33,13 +32,6 @@ for i = 1:block_width:img_width
         
         target_block = target(j:bottom, i:right, :);
         source_block = source(j:bottom, i:right, :);
-        
-        % Don't do any perturbation or store any metadata if the blocks are
-        % the same
-        if all(source_block == target_block, 'all')
-            block_idx = block_idx + 1;
-            continue
-        end
         
         block_offset = offset;
         height = size(source_block, 1);
@@ -55,14 +47,7 @@ for i = 1:block_width:img_width
         end
         
         [new_block, block_metadata] = perturb_block(target_block, source_block, remain_len, block_offset);
-        
-        % Cast the remainders to uint8, giving us four bytes for each
-        % remainder.
-        block_idx_bytes = typecast(uint32(block_idx), 'uint8')';
-        block_idx_bytes = block_idx_bytes(1:block_idx_len, :);
-        block_idx_bytes = [block_idx_bytes, block_idx_bytes, block_idx_bytes];
        
-        block_metadata = [block_idx_bytes; block_metadata];
         metadata = [metadata; block_metadata];
         
         new_img(j:bottom, i:right, :) = new_block;
@@ -90,7 +75,7 @@ metadata_len_bytes = typecast(uint32(metadata_len), 'uint8');
 metadata_len_bytes = metadata_len_bytes(1:3);
 
 % pad metadata to 10% of image size
-padding_ratio = 0.1;
+padding_ratio = 2;
 desired_metadata_len = floor(img_height*img_width*padding_ratio)*3;
 if metadata_len > desired_metadata_len - 3
     error('Metadata is larger than the desired padded length');

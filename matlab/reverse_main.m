@@ -11,4 +11,8 @@ for block_width =[2, 4, 8, 16, 32, 64, 128, 256]
     
     % Print to confirm restored image matches source
     all(source == restored_img, 'all')
+    
+        
+    filename = strcat('../results/restored/p-',int2str(512/block_width),'.bmp');
+    imwrite(restored_img, filename);
 end
