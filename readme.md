@@ -1,13 +1,9 @@
 # Facial Sanitization for TPE
 
-### Perturbation and Reverse Perturbation
-The perturbation and reverse perturbation functions are in perturb.m and reverse_perturbation.m respectively. To perform the encryption and decryption, both functions call openssl from the command line. Thus, openssl must be installed and added to your path. 
+## Sanitization and Restoration
+Sanitization and restoration are done with the Matlab functions `perturb.m` and `reverse_perturbation.m` respectively. They require a source and target image as input. For face sanitization, the source image should be the unaltered image, and the target image should be a modified version of the source image with the faces swapped with dataset faces. This target image can be produced with the python script in this repo.
 
-The length of the padded metadata is hardcoded in the perturb function, and is currently set to 10% of the image size. This can be changed on line 93 of perturb.m (reverse_perturbation.m shouldn't need to be modified). 
-
-
-Usage (in MATLAB):
-
+Example of sanitization (run in Matlab):
 ```
 target = imread(<target image location>);
 source = imread(<source image location>);
@@ -17,27 +13,35 @@ sanitized = perturb(target, source, block_width);
 imwrite(sanitized, <destination location>);
 ```
 
+Example of restoration (run in Matlab):
 ```
 sanitized = imread(<sanitized location>);
 restored = reverse_perturbation(sanitized);
-```
-
-The first example perturbs a source image to have the same thumbnail as a target image (excluding the metadata region), and saves the sanitized image with its metadata.
-
-The second example loads a sanitized image and reverses the perturbation such that `restored` is identical to the source image.
-
-### Automatic Target Face Selection
-
-Automatic target face selection is done by detect_face.py and can be run from the command line.
-
-Usage:
+imwrite(restored, <destination location>);
 
 ```
-$ python detect_face.py <image location> <dataset location> <output image destination>
+
+## Automatic Target Face Selection and Swapping
+
+Given an image with faces, a target image can be produced with the python script `face_swap.py`. Right now the script is only built to be able to use the UTKFace dataset, which contains 200x200 images.
+
+The overall workflow for sanitizing a face image is to generate a target image with `face_swap.py`, produce the sanitized image with metadata using the Matlab script, and then run TPE on the resulting sanitized image.
+
+### Usage:
+
+First install requirements
 ```
+$ pip install -r requirements.txt
+```
+If you wish to use the histogram similarity measurement (not really recommended as it's very slow compared to PSNR), you'll need to index your dataset first. This can be done with `index_dataset.py`:
+```
+python index_dataset.py --dataset=datasets/FilteredUTKFace --index=datasets/filteredUTKFaceIndex.csv
+```
+Run the face swap (example usage):
+```
+$ python face_swap.py --img=images/friends.jpg --output=images/friends_target.jpg --dataset=datasets/FilteredUTKFace --method=PSNR
+```
+Add the argument `--auto=0` to run the script in manual mode. This allows you to manually approve all detected faces to get rid of false positives.
 
-The script takes in an image, detects faces in it, and replaces them with the image in the dataset that has the highest similarity to the face based on either PSNR or SSIM. The modified image is stored in the given output image destination. This image can then be used as a target image for perturbation.
+If using histogram similarity measurement, you'll need to add the argument `--index` with the path to your indexed dataset csv as produced by `index_dataset.py`.
 
-The script is written to be used with subsets of the UTKFace database, which contains 200x200 images. If using a dataset with different sized images, the script will have to be modified.
-
-The choice of PSNR or SSIM is hardcoded, and can be changed on line 36. 
