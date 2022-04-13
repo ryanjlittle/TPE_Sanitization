@@ -7,13 +7,14 @@ import numpy as np
 import time
 import heapq
 import random
+from itertools import count
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from index_dataset import ColorDescriptor
 from image_search import Searcher
 
 
-def face_search(face, dataset, method, index=None, n=20):
+def face_search(face, dataset, method, index=None, n=10):
     if method.upper() == 'SSIM' or method.upper() == 'PSNR':
         return face_search_similarity_measure(face, dataset, n, method)
     elif method.upper() == 'HIST':
@@ -22,14 +23,15 @@ def face_search(face, dataset, method, index=None, n=20):
         raise Exception('Provided method is invalid')
 
 def face_search_similarity_measure(face, dataset, n, measure):
-    resized_face = cv2.resize(face, (100, 100))
+    resized_face = cv2.resize(face, (200, 200))
     max_sim = 0
     best_target = None
     # heap to get the n closest
     heap = []
+    tiebreaker = count()
 
     for filename in os.listdir(dataset):
-        filename = dataset + filename
+        filename = dataset + '/' + filename
         target = cv2.imread(filename)
 
         if measure.upper() == "SSIM":
@@ -38,15 +40,15 @@ def face_search_similarity_measure(face, dataset, n, measure):
             similarity = psnr(resized_face, target)
 
         if len(heap) < n:
-            heapq.heappush(heap, (similarity, target))
+            heapq.heappush(heap, (similarity, next(tiebreaker), target))
             continue
         
         if heap[0][0] < similarity:
             # replace smallest item in heap 
-            heapq.heapreplace(heap, (similarity, target))
+            heapq.heapreplace(heap, (similarity, next(tiebreaker), target))
         
     i = random.randint(0, n-1)
-    return heap[i][1]
+    return heap[i][2]
 
 def face_search_hist(face, dataset, index, n):
     cd = ColorDescriptor((8,12,3))
@@ -223,7 +225,7 @@ def detect_and_replace_faces(args):
         rotated_face = rotate_face(img, (x,y,w,h), angle, cos_angle, sin_angle, rotated_corners)
         
         # Find similar looking face from the dataset
-        match = face_search(rotated_face, args.dataset, args.method, args.index, n=20)
+        match = face_search(rotated_face, args.dataset, args.method, args.index, n=10)
 
         # Rotate matched face to the proper angle and overlay it on top of the original face in the image
         rotated_match = rotate_matched_face(img, match, angle, rotated_corners)
